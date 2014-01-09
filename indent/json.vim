@@ -20,7 +20,7 @@ setlocal nosmartindent
 
 " Now, set up our indentation expression and keys that trigger it.
 setlocal indentexpr=GetJSONIndent()
-setlocal indentkeys=0{,0},0),0],!^F,o,O,e
+setlocal indentkeys=0{,0},0),0[,0],!^F,o,O,e
 
 " Only define the function once.
 if exists("*GetJSONIndent")
@@ -103,15 +103,21 @@ function GetJSONIndent()
   " If we got a closing bracket on an empty line, find its match and indent
   " according to it.
   let col = matchend(line, '^\s*[]}]')
+
   if col > 0 && !s:IsInString(v:lnum, col)
     call cursor(v:lnum, col)
     let bs = strpart('{}[]', stridx('}]', line[col - 1]) * 2, 2)
-    let pairline = searchpair(bs[0], '', bs[1], 'bW')
+
+    let pairstart = escape(bs[0], '[')
+    let pairend = escape(bs[1], ']')
+    let pairline = searchpair(pairstart, '', pairend, 'bW')
+
     if pairline > 0 
       let ind = indent(pairline)
     else
       let ind = virtcol('.') - 1
     endif
+
     return ind
   endif
 
@@ -134,9 +140,9 @@ function GetJSONIndent()
   let ind = indent(lnum)
 
   " If the previous line ended with a block opening, add a level of indent.
-  if s:Match(lnum, s:block_regex)
-    return indent(lnum) + &sw
-  endif
+  " if s:Match(lnum, s:block_regex)
+    " return indent(lnum) + &sw
+  " endif
 
   " If the previous line contained an opening bracket, and we are still in it,
   " add indent depending on the bracket type.
